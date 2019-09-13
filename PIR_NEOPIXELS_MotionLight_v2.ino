@@ -8,7 +8,8 @@
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 int LIGHTUP_DELAY = 100; // in milliseconds
-int FADEOUT_DELAY = 10;
+int FADEOUT_DELAY_MULTIPLIER = 0.03; // Between 0.02 and 0.05 seems to be a good range.
+int FADEIN_DELAY_MULTIPLIER = .8; // 2 seconds is too high, and 0.5 is kinda too low.
 int pirVal = 0;
 long previousTime = 0;
 long interval = 30000;
@@ -34,13 +35,17 @@ void loop() {
   if(pirVal > 0 && !delayIsActive){
       Serial.println("===========================");
       Serial.println("Movement Detected!");
-      Serial.println("Drawing WHITE...");
-      drawWhite();
+      Serial.println("Fading Neopixels IN...");
+      fadeIn();
       Serial.println("===========================");
       delayIsActive = true;
       previousTime = millis();
   } else if (pirVal > 0 && delayIsActive){
       // If there's still movement, reset timer..
+      Serial.println("===========================");
+      Serial.println("More movement detected!");
+      Serial.println("Reseting timer...");
+      Serial.println("===========================");
       previousTime = millis();
   }
   
@@ -49,12 +54,11 @@ void loop() {
   {
     previousTime = currentTime;
     delayIsActive = false;
-    drawBlank();
+    fadeOut();
     Serial.println("===========================");
     Serial.println("Drawing BLANK...");
     Serial.println("===========================");
   }
-
 }
 
 void drawWhite(){
@@ -64,10 +68,19 @@ void drawWhite(){
 
 void fadeOut(){
   for(int colour = 255; colour > 0; colour--){ 
-    for(int i; i<NUMPIXELS; i++){ //                  R,  G,  B
-      pixels.setPixelColor(i, pixels.Color(colour,colour,colour)); 
-      pixels.show();
-    }
+    pixels.fill(pixels.Color(colour, colour, colour), 0, pixels.numPixels());
+    pixels.show();
+    delay(colour * FADEOUT_DELAY_MULTIPLIER);
+  }
+  pixels.clear();
+  pixels.show();
+}
+
+void fadeIn(){
+  for(int colour = 1; colour <= 255; colour++){ 
+    pixels.fill(pixels.Color(colour, colour, colour), 0, pixels.numPixels());
+    pixels.show();
+    delay(colour * FADEIN_DELAY_MULTIPLIER);
   }
 }
 
